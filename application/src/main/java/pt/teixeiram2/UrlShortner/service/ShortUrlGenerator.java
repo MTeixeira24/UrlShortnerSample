@@ -6,7 +6,6 @@ import org.springframework.stereotype.Service;
 import pt.teixeiram2.UrlShortner.model.UrlMap;
 
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
 @Service
 public class ShortUrlGenerator {
