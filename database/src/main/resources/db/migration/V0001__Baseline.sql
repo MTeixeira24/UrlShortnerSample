@@ -2,7 +2,7 @@ create table `url_mappings`(
 	`id` bigint not null auto_increment,
     `short_url` varchar(6) not null,
     `url` blob not null,
-    `checksum` int not null,
+    `checksum` bigint not null,
     `insert_ts` datetime default now(),
     `version` int default 1,
     primary key (`id`)

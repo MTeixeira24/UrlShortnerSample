@@ -20,7 +20,7 @@ public class UrlMappingEntity {
     @Column(name = "url")
     private String url;
     @Column(name = "checksum")
-    private int checksum;
+    private long checksum;
     @Column(name = "insert_ts")
     private Date insertTs;
     @Column(name = "version")
@@ -50,11 +50,11 @@ public class UrlMappingEntity {
         this.url = url;
     }
 
-    public int getChecksum() {
+    public long getChecksum() {
         return checksum;
     }
 
-    public void setChecksum(int checksum) {
+    public void setChecksum(long checksum) {
         this.checksum = checksum;
     }
 
