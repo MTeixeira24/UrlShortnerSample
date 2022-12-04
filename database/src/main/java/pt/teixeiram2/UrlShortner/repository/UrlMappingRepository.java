@@ -8,4 +8,6 @@ import java.util.Optional;
 
 public interface UrlMappingRepository extends CrudRepository<UrlMappingEntity, BigInteger> {
     Optional<UrlMappingEntity> findByChecksum(long checksum);
+
+    Optional<UrlMappingEntity> findByShortUrl(String shortUrl);
 }

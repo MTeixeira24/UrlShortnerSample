@@ -18,16 +18,14 @@ public class ShortUrlGenerator {
     private static final int SIZE = ALPHA_SIZE + NUMERIC_SIZE;
 
 
-    public UrlMap shortenUrl(String fullUrl) {
+    public UrlMap shortenUrl(String fullUrl, long checksum) {
         if(fullUrl == null || fullUrl.isBlank()) {
             LOGGER.error("operation='shortenUrl', msg='Attempted to generate short url for empty string'");
             throw new IllegalArgumentException("Attempted to generate short url for empty string");
         }
 
         LOGGER.debug("operation=shortenUrl, fullUrl={}, msg='Generating short URL'", fullUrl);
-        long hash = hash64(fullUrl);
-        LOGGER.debug("operation=shortenUrl, hash={}, msg='Computed 64-bit hash'", hash);
-        ByteBuffer hashBytes = ByteBuffer.allocate(Long.BYTES).putLong(hash).position(0);
+        ByteBuffer hashBytes = ByteBuffer.allocate(Long.BYTES).putLong(checksum).position(0);
         StringBuilder stringBuilder = new StringBuilder();
         while (hashBytes.position() < Long.BYTES) {
             char shortChar;
@@ -43,21 +41,22 @@ public class ShortUrlGenerator {
         }
         String shortUrl = stringBuilder.toString();
         LOGGER.info("operation=shortenUrl, fullUrl={}, shortUrl={}, hash={}, msg='Generated short url'",
-                fullUrl, shortUrl, hash);
+                fullUrl, shortUrl, checksum);
 
         return UrlMap.builder()
                 .withShortUrl(shortUrl)
-                .withChecksum(hash)
+                .withChecksum(checksum)
                 .withUrl(fullUrl)
                 .build();
     }
 
-    private long hash64(String value) {
+    public long computeChecksum(String value) {
         long hash = 0;
         int length = value.length() >> 1;
         for (int i = 0; i < length; i++) {
             hash = 31 * hash + value.charAt(i);
         }
+        LOGGER.debug("operation=shortenUrl, hash={}, msg='Computed 64-bit hash'", hash);
         return hash;
     }
 }
