@@ -27,7 +27,6 @@ public class UrlMappingController {
         this.urlMappingService = urlMappingService;
     }
 
-    //TODO Dummy implementation for testing
     @PostMapping(path = "/createMapping")
     public CreateMappingResponse createMapping(@RequestBody CreateMappingRequest request) {
         if (request == null || request.getFullUrl() == null || request.getFullUrl().isBlank()) {
