@@ -1,5 +1,8 @@
 package pt.teixeiram2.UrlShortner.dto;
 
+import java.util.Objects;
+import java.util.StringJoiner;
+
 public final class CreateMappingResponse {
 
     private final String url;
@@ -23,6 +26,26 @@ public final class CreateMappingResponse {
         return shortUrl;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CreateMappingResponse that = (CreateMappingResponse) o;
+        return Objects.equals(url, that.url) && Objects.equals(shortUrl, that.shortUrl);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(url, shortUrl);
+    }
+
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", CreateMappingResponse.class.getSimpleName() + "[", "]")
+                .add("url='" + url + "'")
+                .add("shortUrl='" + shortUrl + "'")
+                .toString();
+    }
 
     public static final class CreateMappingResponseBuilder {
         private String url;
