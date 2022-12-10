@@ -57,14 +57,9 @@ public class UrlMappingService {
         }
     }
 
-    //TODO Dummy implementation for testing
-    public Optional<UrlMappingEntity> fetchEntity(long checksum) {
-        return urlMappingRepository.findByChecksum(checksum);
-    }
-
-    public Optional<String> fetchFullUrl(String shortUrl) {
+    public Optional<UrlMap> fetchFullUrl(String shortUrl) {
         return urlMappingRepository.findByShortUrl(shortUrl)
-                .map(UrlMappingEntity::getUrl);
+                .map(urlMapConverter::convertTo);
     }
 
 }
