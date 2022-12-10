@@ -69,7 +69,7 @@ public class UrlShortnerIntegrationTests {
 
         CreateMappingResponse expectation = CreateMappingResponse.builder()
                 .withUrl(url)
-                .withShortUrl("3wqk")
+                .withShortUrl("3wslt8v")
                 .build();
 
         ResponseEntity<CreateMappingResponse> createMappingResponseEntity =
@@ -105,7 +105,7 @@ public class UrlShortnerIntegrationTests {
     @Test
     void shouldFetchFullUrl() {
         String expectedUrl = "http://www.example.com/path?key=value#";
-        String shortUrl = "3wqk";
+        String shortUrl = "3wslt8v";
         Map<String, String> params = new HashMap<>();
         params.put("shortUrl", shortUrl);
 

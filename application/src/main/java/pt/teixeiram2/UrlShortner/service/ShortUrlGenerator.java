@@ -5,12 +5,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import pt.teixeiram2.UrlShortner.model.UrlMap;
 
-import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ShortUrlGenerator {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ShortUrlGenerator.class);
+    private static final int PART_SPLIT_COUNT = 6;
     private static final short NUMERIC_START = 48;
     private static final int NUMERIC_SIZE = 9;
     private static final short ALPHA_START = 97;
@@ -19,27 +22,19 @@ public class ShortUrlGenerator {
 
 
     public UrlMap shortenUrl(String fullUrl, long checksum) {
-        if(fullUrl == null || fullUrl.isBlank()) {
+        if (fullUrl == null || fullUrl.isBlank()) {
             LOGGER.error("operation='shortenUrl', msg='Attempted to generate short url for empty string'");
             throw new IllegalArgumentException("Attempted to generate short url for empty string");
         }
 
         LOGGER.debug("operation=shortenUrl, fullUrl={}, msg='Generating short URL'", fullUrl);
-        ByteBuffer hashBytes = ByteBuffer.allocate(Long.BYTES).putLong(checksum).position(0);
-        StringBuilder stringBuilder = new StringBuilder();
-        while (hashBytes.position() < Long.BYTES) {
-            char shortChar;
-            short val = hashBytes.getShort();
-            short mod = (short) Math.abs(val % SIZE);
-            if (mod <= NUMERIC_SIZE) {
-                shortChar = (char) (NUMERIC_START + mod);
-            } else {
-                shortChar = (char) (ALPHA_START + (mod - NUMERIC_SIZE));
-            }
-            stringBuilder.append(shortChar);
-            LOGGER.debug("operation=shortenUrl, short={}, char={}, msg='Computed character'", val, shortChar);
-        }
-        String shortUrl = stringBuilder.toString();
+
+        String shortUrl = splitString(fullUrl)
+                .stream()
+                .map(String::hashCode)
+                .map(this::toAlphaNumeric)
+                .collect(Collectors.joining());
+
         LOGGER.info("operation=shortenUrl, fullUrl={}, shortUrl={}, hash={}, msg='Generated short url'",
                 fullUrl, shortUrl, checksum);
 
@@ -48,6 +43,30 @@ public class ShortUrlGenerator {
                 .withChecksum(checksum)
                 .withUrl(fullUrl)
                 .build();
+    }
+
+    private String toAlphaNumeric(Integer hash) {
+        String shortChar;
+        short mod = (short) Math.abs(hash % SIZE);
+        if (mod <= NUMERIC_SIZE) {
+            shortChar = String.valueOf((char) (NUMERIC_START + mod));
+        } else {
+            shortChar = String.valueOf((char) (ALPHA_START + (mod - NUMERIC_SIZE)));
+        }
+        return shortChar;
+    }
+
+    private List<String> splitString(String urlString) {
+        int segmentSize = urlString.length() / PART_SPLIT_COUNT;
+        List<String> result = new ArrayList<>(8);
+        for (int i = 0; i < urlString.length(); i += segmentSize) {
+            int endIndex = i + segmentSize;
+            if (endIndex > urlString.length()) {
+                endIndex = urlString.length();
+            }
+            result.add(urlString.substring(i, endIndex));
+        }
+        return result;
     }
 
     public long computeChecksum(String value) {

@@ -1,6 +1,6 @@
 create table `url_mappings`(
 	`id` bigint not null auto_increment,
-    `short_url` varchar(6) not null,
+    `short_url` varchar(8) not null,
     `url` blob not null,
     `checksum` bigint not null unique,
     `insert_ts` datetime default now(),
