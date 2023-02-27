@@ -1,21 +1,17 @@
 package pt.teixeiram2.UrlShortner.controller;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.NullAndEmptySource;
-import org.junit.jupiter.params.provider.NullSource;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.context.request.WebRequest;
-import pt.teixeiram2.UrlShortner.controller.exception.InvalidRequest;
-import pt.teixeiram2.UrlShortner.controller.exception.NoSuchMappingException;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
 import pt.teixeiram2.UrlShortner.dto.CreateMappingRequest;
 import pt.teixeiram2.UrlShortner.dto.CreateMappingResponse;
 import pt.teixeiram2.UrlShortner.dto.FetchMappingResponse;
@@ -26,16 +22,21 @@ import pt.teixeiram2.UrlShortner.service.UrlMappingService;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.BDDMockito.given;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-//TODO Use MVC slice testing
-@ExtendWith(MockitoExtension.class)
+@WebMvcTest(UrlMappingController.class)
 class UrlMappingControllerTest {
 
-    private UrlMappingControllerMock victim;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    @Mock
-    private UrlMappingService urlMappingService;
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockBean
+    UrlMappingService urlMappingService;
 
     public static Stream<Arguments> illegalArgsProvider() {
         CreateMappingRequest blankRequest = new CreateMappingRequest();
@@ -46,14 +47,9 @@ class UrlMappingControllerTest {
         );
     }
 
-    @BeforeEach
-    public void setUp() {
-        victim = new UrlMappingControllerMock(urlMappingService);
-    }
-
     @Test
-    @Disabled
-    public void shouldReturnMappingResponse() {
+    public void shouldReturnMappingResponse() throws Exception {
+
         String url = "example.com";
         String shortUrl = "aaaa";
         UrlMap urlMap = UrlMap.builder()
@@ -61,21 +57,24 @@ class UrlMappingControllerTest {
                 .withShortUrl(shortUrl)
                 .withUrl(url)
                 .build();
+
         CreateMappingRequest request = new CreateMappingRequest();
         request.setFullUrl(url);
         CreateMappingResponse expected = new CreateMappingResponse(url, shortUrl);
 
-        Mockito.when(urlMappingService.createMapping(url))
-                .thenReturn(urlMap);
+        given(urlMappingService.createMapping(url))
+                .willReturn(urlMap);
 
-        ResponseEntity<CreateMappingResponse> response = victim.createMapping(request);
-        Mockito.verify(urlMappingService, Mockito.times(1)).createMapping(url);
-        assertEquals(expected, response);
+        mockMvc.perform(post("/shorten/createMapping")
+                    .content(OBJECT_MAPPER.writeValueAsString(request))
+                    .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(OBJECT_MAPPER.writeValueAsString(expected)));
     }
 
     @Test
-    @Disabled
-    public void shouldFetchUrl() {
+    public void shouldFetchUrl() throws Exception {
         String url = "example.com";
         String shortUrl = "aaaa";
         FetchMappingResponse expected = new FetchMappingResponse(url);
@@ -85,76 +84,59 @@ class UrlMappingControllerTest {
                 .withUrl(url)
                 .build();
 
-        Mockito.when(urlMappingService.fetchFullUrl(shortUrl))
-                .thenReturn(Optional.of(urlMap));
+        given(urlMappingService.fetchFullUrl(shortUrl))
+                .willReturn(Optional.of(urlMap));
 
-        FetchMappingResponse response = victim.getFullUrl(shortUrl);
-        Mockito.verify(urlMappingService, Mockito.times(1)).fetchFullUrl(shortUrl);
-        assertNotNull(response);
-        assertEquals(expected, response);
+        mockMvc.perform(get("/shorten/getFullUrl?shortUrl={shortUrl}", shortUrl)
+                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(OBJECT_MAPPER.writeValueAsString(expected)));
     }
 
     @Test
-    @Disabled
-    public void shouldThrowIfMappingNotFound() {
+    public void shouldThrowIfMappingNotFound() throws Exception {
         String shortUrl = "aaaa";
+        String expected = OBJECT_MAPPER.writeValueAsString(
+                new InvalidRequestResponse(InvalidRequestResponse.NO_SUCH_MAPPING_ERROR, "Mapping not Found")
+        );
 
-        Mockito.when(urlMappingService.fetchFullUrl(shortUrl))
-                .thenReturn(Optional.empty());
+        given(urlMappingService.fetchFullUrl(shortUrl))
+                .willReturn(Optional.empty());
 
-        assertThrows(NoSuchMappingException.class, () -> victim.getFullUrl(shortUrl));
-
-        Mockito.verify(urlMappingService, Mockito.times(1)).fetchFullUrl(shortUrl);
+        mockMvc.perform(get("/shorten/getFullUrl?shortUrl={shortUrl}", shortUrl)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(expected));
     }
 
     @ParameterizedTest
-    @NullSource
     @MethodSource("illegalArgsProvider")
-    public void shouldThrowOnInvalidArgs(CreateMappingRequest createMappingRequest) {
-        assertThrows(InvalidRequest.class, () -> victim.createMapping(createMappingRequest));
+    public void shouldThrowOnInvalidArgs(CreateMappingRequest createMappingRequest) throws Exception {
+
+        mockMvc.perform(post("/shorten/createMapping")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(toJson(createMappingRequest)))
+                .andDo(print())
+                .andExpect(content().json(OBJECT_MAPPER.writeValueAsString(
+                        new InvalidRequestResponse(InvalidRequestResponse.INVALID_REQUEST_ERROR, "Invalid url")
+                )));
+    }
+
+    private static String toJson(CreateMappingRequest createMappingRequest) throws JsonProcessingException {
+        return OBJECT_MAPPER.writeValueAsString(createMappingRequest);
     }
 
     @ParameterizedTest
     @NullAndEmptySource
-    public void shouldThrowOnInvalidParamsWhenFetchingUrl(String input) {
-        assertThrows(InvalidRequest.class, () -> victim.getFullUrl(input));
-    }
-
-    @Test
-    @Disabled
-    public void shouldHandleInvalidMappingRequests() {
-        RuntimeException ex = new InvalidRequest("Error Message");
-        ResponseEntity<InvalidRequestResponse> response = victim.invalidRequestHandlerDelegate(ex, null);
-        assertEquals(400, response.getStatusCode().value());
-        assertNotNull(response.getBody());
-        assertEquals("Error Message", response.getBody().getCause());
-        assertEquals(InvalidRequestResponse.INVALID_REQUEST_ERROR, response.getBody().getError());
-    }
-
-    @Test
-    @Disabled
-    public void shouldHandleNotFoundMappings() {
-        RuntimeException ex = new NoSuchMappingException("Error Message");
-        ResponseEntity<InvalidRequestResponse> response = victim.noSuchMappingHandlerDelegate(ex, null);
-        assertEquals(404, response.getStatusCode().value());
-        assertNotNull(response.getBody());
-        assertEquals("Error Message", response.getBody().getCause());
-        assertEquals(InvalidRequestResponse.NO_SUCH_MAPPING_ERROR, response.getBody().getError());
-    }
-
-    static class UrlMappingControllerMock extends UrlMappingController {
-
-        public UrlMappingControllerMock(UrlMappingService urlMappingService) {
-            super(urlMappingService, "a");
-        }
-
-        public ResponseEntity<InvalidRequestResponse> invalidRequestHandlerDelegate(RuntimeException ex, WebRequest request) {
-            return super.invalidRequestHandler(ex, request);
-        }
-
-        public ResponseEntity<InvalidRequestResponse> noSuchMappingHandlerDelegate(RuntimeException ex, WebRequest request) {
-            return super.noSuchMappingHandler(ex, request);
-        }
+    public void shouldThrowOnInvalidParamsWhenFetchingUrl(String input) throws Exception {
+        mockMvc.perform(get("/shorten/getFullUrl?shortUrl={shortUrl}", input)
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().json(OBJECT_MAPPER.writeValueAsString(
+                        new InvalidRequestResponse(InvalidRequestResponse.INVALID_REQUEST_ERROR, "Invalid url provided")
+                )));
     }
 
 }
