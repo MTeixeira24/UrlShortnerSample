@@ -21,12 +21,15 @@ public class UrlMappingService {
     private final UrlMappingRepository urlMappingRepository;
     private final ShortUrlGenerator shortUrlGenerator;
     private final BiDirectionalConverter<UrlMap, UrlMappingEntity> urlMapConverter;
+    private final ShortnerMessagePublisher shortnerMessagePublisher;
 
     public UrlMappingService(UrlMappingRepository urlMappingRepository,
                              ShortUrlGenerator shortUrlGenerator,
+                             ShortnerMessagePublisher shortnerMessagePublisher,
                              BiDirectionalConverter<UrlMap, UrlMappingEntity> urlMapConverter) {
         this.urlMappingRepository = urlMappingRepository;
         this.shortUrlGenerator = shortUrlGenerator;
+        this.shortnerMessagePublisher = shortnerMessagePublisher;
         this.urlMapConverter = urlMapConverter;
     }
 
@@ -53,6 +56,7 @@ public class UrlMappingService {
                     throw new RuntimeException("Unable to persist entity");
                 }
             }
+            shortnerMessagePublisher.publishMessage(urlMap);
             return urlMap;
         }
     }

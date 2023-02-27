@@ -10,6 +10,7 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import pt.teixeiram2.UrlShortner.dto.CreateMappingRequest;
 import pt.teixeiram2.UrlShortner.dto.CreateMappingResponse;
@@ -30,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@EmbeddedKafka(partitions = 1, brokerProperties = { "listeners=PLAINTEXT://localhost:9092", "port=9092" })
 @Testcontainers
 public class UrlShortnerIntegrationTests {
 
