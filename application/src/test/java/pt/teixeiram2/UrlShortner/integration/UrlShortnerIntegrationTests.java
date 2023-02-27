@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -75,7 +76,7 @@ public class UrlShortnerIntegrationTests {
         ResponseEntity<CreateMappingResponse> createMappingResponseEntity =
                 restTemplate.postForEntity(createMappingUrl, createMappingRequest, CreateMappingResponse.class);
 
-        assertEquals(200, createMappingResponseEntity.getStatusCode().value());
+        assertEquals(HttpStatus.CREATED.value(), createMappingResponseEntity.getStatusCode().value());
         assertEquals(expectation, createMappingResponseEntity.getBody());
     }
 
@@ -145,7 +146,7 @@ public class UrlShortnerIntegrationTests {
         ResponseEntity<CreateMappingResponse> createMappingResponseEntity =
                 restTemplate.postForEntity(createMappingUrl, createMappingRequest, CreateMappingResponse.class);
 
-        assertEquals(200, createMappingResponseEntity.getStatusCode().value());
+        assertEquals(HttpStatus.CREATED.value(), createMappingResponseEntity.getStatusCode().value());
     }
 
     private int countDbRecordsWithChecksum(long checksum) {

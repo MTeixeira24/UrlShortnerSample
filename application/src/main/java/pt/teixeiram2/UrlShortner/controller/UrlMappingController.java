@@ -2,11 +2,13 @@ package pt.teixeiram2.UrlShortner.controller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import pt.teixeiram2.UrlShortner.controller.exception.InvalidRequest;
 import pt.teixeiram2.UrlShortner.controller.exception.NoSuchMappingException;
 import pt.teixeiram2.UrlShortner.dto.CreateMappingRequest;
@@ -16,6 +18,8 @@ import pt.teixeiram2.UrlShortner.dto.InvalidRequestResponse;
 import pt.teixeiram2.UrlShortner.model.UrlMap;
 import pt.teixeiram2.UrlShortner.service.UrlMappingService;
 
+import java.net.URI;
+
 @RestController
 @RequestMapping(path = "/shorten")
 public class UrlMappingController {
@@ -23,23 +27,39 @@ public class UrlMappingController {
     private static final Logger LOGGER = LoggerFactory.getLogger(UrlMappingController.class);
 
     private final UrlMappingService urlMappingService;
+    private final String redirectServiceDomain;
 
-    public UrlMappingController(UrlMappingService urlMappingService) {
+    public UrlMappingController(UrlMappingService urlMappingService,
+                                @Value("${ust.redirectServiceDomain}") String redirectServiceDomain) {
         this.urlMappingService = urlMappingService;
+        this.redirectServiceDomain = redirectServiceDomain;
     }
 
     @PostMapping(path = "/createMapping")
-    public CreateMappingResponse createMapping(@RequestBody CreateMappingRequest request) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<CreateMappingResponse> createMapping(@RequestBody CreateMappingRequest request) {
         if (request == null || request.getFullUrl() == null || request.getFullUrl().isBlank()) {
             LOGGER.error("operation=createMapping, request={}, msg='Received invalid mapping request'", request);
             throw new InvalidRequest("Invalid url");
         }
 
         UrlMap urlMap = urlMappingService.createMapping(request.getFullUrl());
-        return CreateMappingResponse.builder()
+
+        URI location = ServletUriComponentsBuilder
+                .fromHttpUrl(redirectServiceDomain)
+                .path("/{shortUrl}")
+                .buildAndExpand(urlMap.getShortUrl())
+                .toUri();
+
+        CreateMappingResponse createMappingResponse = CreateMappingResponse.builder()
                 .withShortUrl(urlMap.getShortUrl())
                 .withUrl(urlMap.getUrl())
                 .build();
+
+        return ResponseEntity
+                .created(location)
+                .body(createMappingResponse);
+
     }
 
     @GetMapping(path = "/getFullUrl")

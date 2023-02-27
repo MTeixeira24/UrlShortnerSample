@@ -8,7 +8,7 @@ import java.sql.Date;
 import java.util.Objects;
 
 @Entity
-@Table(name= "url_mappings")
+@Table(name = "url_mappings")
 public class UrlMappingEntity {
 
     @Id

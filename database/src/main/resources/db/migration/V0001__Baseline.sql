@@ -9,3 +9,9 @@ create table `url_mappings`(
 );
 create index `idx_url_mappings_short_url` on url_mappings(short_url);
 create index `idx_url_mappings_checksum` on url_mappings(checksum);
+
+create table `redirect_service_domain` (
+    `id` int not null auto_increment,
+    `domain` varchar(255) not null,
+    primary key (`id`)
+);

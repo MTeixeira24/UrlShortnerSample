@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class ShortUrlGeneratorTest {
 
     private static final String HUGE_URL = """
-            https://awesome.saas.service/fetch?=blobQueryParam=
+            https://awesome.saas.service/fetch?blobQueryParam=
             MqTEJ9sdbTsHgd8koBeK
             BR6VVpnOlJwv71J2rgN0
             RwqQEffy3wWYcr3lHFTI
