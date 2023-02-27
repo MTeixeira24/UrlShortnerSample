@@ -175,8 +175,8 @@ class ShortUrlGeneratorTest {
                 Arguments.of("http://www.example.com/path?key=value#", "3wslt8v"),
                 Arguments.of("http://www.example.com/path?key=myValue#", "3wslt57"),
                 Arguments.of("http://www.xeample.com/path?key=myValue#", "3j8lt57"),
-                Arguments.of(HUGE_URL, "le06eq7"),
-                Arguments.of(HUGE_URL.replaceFirst("dsm", "abc"), "8e06eq7")
+                Arguments.of(HUGE_URL, "b5ie5sh"),
+                Arguments.of(HUGE_URL.replaceFirst("dsm", "abc"), "r5ie5sh")
         );
     }
 
@@ -186,8 +186,8 @@ class ShortUrlGeneratorTest {
                 Arguments.of("http://www.example.com/path?key=value#", -6035612812965332595L),
                 Arguments.of("http://www.example.com/path?key=myValue#", -2636556464829794186L),
                 Arguments.of("http://www.xeample.com/path?key=myValue#", -2636540782639750916L),
-                Arguments.of(HUGE_URL, 8977956589421930356L),
-                Arguments.of(HUGE_URL.replaceFirst("dsm", "abc"), -8087248073619821488L)
+                Arguments.of(HUGE_URL, -7849555056863376629L),
+                Arguments.of(HUGE_URL.replaceFirst("dsm", "abc"), -6468015646195576857L)
         );
     }
 
