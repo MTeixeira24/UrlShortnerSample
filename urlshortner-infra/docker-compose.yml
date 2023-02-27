@@ -1,0 +1,35 @@
+version: '3'
+services:
+  mysql-shortner:
+    image: mysql:8
+    container_name: mysql-shortner
+    environment:
+      MYSQL_ROOT_USER: 'root'
+      MYSQL_ROOT_PASSWORD: 'root'
+      MYSQL_USER: 'urlApp'
+      MYSQL_PASSWORD: '1234'
+      MYSQL_DATABASE: 'shortner'
+    ports:
+      - "3306:3306"
+
+  zookeeper-shortner:
+    container_name: zookeeper-shortner
+    image: zookeeper
+    ports:
+      - "2181"
+
+  kafka-shortner:
+    container_name: kafka-shortner
+    image: wurstmeister/kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper-shortner:2181
+      KAFKA_LISTENERS: INTERNAL://0.0.0.0:9091,OUTSIDE://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka-shortner:9091,OUTSIDE://127.0.0.1:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,OUTSIDE:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+    depends_on:
+      - zookeeper-shortner
