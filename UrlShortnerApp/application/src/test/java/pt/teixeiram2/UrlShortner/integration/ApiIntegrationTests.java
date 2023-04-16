@@ -1,24 +1,13 @@
 package pt.teixeiram2.UrlShortner.integration;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.web.client.TestRestTemplate;
-import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import pt.teixeiram2.UrlShortner.dto.CreateMappingRequest;
 import pt.teixeiram2.UrlShortner.dto.CreateMappingResponse;
 import pt.teixeiram2.UrlShortner.dto.FetchMappingResponse;
 import pt.teixeiram2.UrlShortner.dto.InvalidRequestResponse;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,38 +19,12 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@EmbeddedKafka(partitions = 1, brokerProperties = { "listeners=PLAINTEXT://localhost:9092", "port=9092" })
-@Testcontainers
-public class UrlShortnerIntegrationTests {
+public class ApiIntegrationTests extends AbstractIntegrationTests {
 
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    @Autowired
-    JdbcTemplate jdbcTemplate;
-    @LocalServerPort
-    private int port;
-    private String baseUrl;
-    private URI createMappingUrl;
-    private String fetchUrl;
-    @Autowired
-    private TestRestTemplate restTemplate;
-
-    @BeforeEach
-    public void setUp() throws URISyntaxException {
-        baseUrl = "http://localhost:" + port + "/";
-        createMappingUrl = new URI(baseUrl + "shorten/createMapping");
-        fetchUrl = baseUrl + "shorten/getFullUrl?shortUrl={shortUrl}";
-        cleanDatastore();
-    }
-
-    private void cleanDatastore() {
-        jdbcTemplate.execute("TRUNCATE TABLE url_mappings");
-    }
 
     @Test
     void contextLoads() {
-        assertNotNull(jdbcTemplate);
+        assertNotNull(getJdbcTemplate());
     }
 
     @Test
@@ -76,7 +39,7 @@ public class UrlShortnerIntegrationTests {
                 .build();
 
         ResponseEntity<CreateMappingResponse> createMappingResponseEntity =
-                restTemplate.postForEntity(createMappingUrl, createMappingRequest, CreateMappingResponse.class);
+                getRestTemplate().postForEntity(getCreateMappingUrl(), createMappingRequest, CreateMappingResponse.class);
 
         assertEquals(HttpStatus.CREATED.value(), createMappingResponseEntity.getStatusCode().value());
         assertEquals(expectation, createMappingResponseEntity.getBody());
@@ -92,7 +55,7 @@ public class UrlShortnerIntegrationTests {
         ExecutorService executorService = Executors.newFixedThreadPool(50);
         List<Callable<ResponseEntity<CreateMappingResponse>>> requests = new ArrayList<>(50);
         for (int i = 0; i < 50; i++) {
-            requests.add(() -> restTemplate.postForEntity(createMappingUrl, createMappingRequest, CreateMappingResponse.class));
+            requests.add(() -> getRestTemplate().postForEntity(getCreateMappingUrl(), createMappingRequest, CreateMappingResponse.class));
         }
         executorService.invokeAll(requests);
         executorService.shutdown();
@@ -115,7 +78,7 @@ public class UrlShortnerIntegrationTests {
         createMapping(expectedUrl);
 
         ResponseEntity<FetchMappingResponse> response =
-                restTemplate.getForEntity(fetchUrl, FetchMappingResponse.class, params);
+                getRestTemplate().getForEntity(getFetchUrl(), FetchMappingResponse.class, params);
 
         assertEquals(200, response.getStatusCode().value());
         assertNotNull(response.getBody());
@@ -131,7 +94,7 @@ public class UrlShortnerIntegrationTests {
         ResponseEntity<String> response;
         try {
             response =
-                    restTemplate.getForEntity(fetchUrl, String.class, params);
+                    getRestTemplate().getForEntity(getFetchUrl(), String.class, params);
             assertEquals(404, response.getStatusCode().value());
             InvalidRequestResponse invalidRequestResponse = MAPPER.readValue(response.getBody(), InvalidRequestResponse.class);
             assertEquals(InvalidRequestResponse.NO_SUCH_MAPPING_ERROR, invalidRequestResponse.getError());
@@ -146,7 +109,7 @@ public class UrlShortnerIntegrationTests {
         CreateMappingRequest createMappingRequest = new CreateMappingRequest();
         createMappingRequest.setFullUrl(url);
         ResponseEntity<CreateMappingResponse> createMappingResponseEntity =
-                restTemplate.postForEntity(createMappingUrl, createMappingRequest, CreateMappingResponse.class);
+                getRestTemplate().postForEntity(getCreateMappingUrl(), createMappingRequest, CreateMappingResponse.class);
 
         assertEquals(HttpStatus.CREATED.value(), createMappingResponseEntity.getStatusCode().value());
     }
